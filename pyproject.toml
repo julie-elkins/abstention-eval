@@ -1,0 +1,24 @@
+[project]
+name = "abstention-eval"
+version = "0.1.0"
+description = "A measured finding: an LLM's abstention rate is a property of the prompt, not of the model."
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic==0.69.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.3.4"]
+
+[project.scripts]
+abstention-eval = "abstention_eval.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

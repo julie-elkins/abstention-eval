@@ -1,0 +1,39 @@
+// TEMPLATE for the study bank. Copy to bank.jsonl and replace every line.
+//
+// TARGET COMPOSITION: 60 items -- 40 `sound` and 20 `flawed`.
+//
+// Both populations are load-bearing, and this is the design point:
+//   sound  -> exactly one option is correct. The model declining here is a
+//             FALSE abstention. This is what the escape hatch COSTS.
+//   flawed -> the item is defective in a stated way. The model declining
+//             here is CORRECT. This is what the escape hatch BUYS.
+// Reporting only the second is how an abstention study flatters itself: a
+// prompt that declines on everything scores perfectly on `flawed` alone.
+//
+// THE 20 FLAWED ITEMS SPLIT ACROSS THREE FLAW TYPES, roughly evenly:
+//   no_correct_option        -- all four options are wrong
+//   multiple_correct_options -- two or more options are defensibly correct
+//   unanswerable_stem        -- the stem omits what is needed to choose
+//
+// RULES, because a sloppy bank is the easiest way to lose this finding:
+//   1. Every item has exactly four options, keyed A, B, C, D.
+//   2. A `sound` item carries `key` and no `flaw_type`. A `flawed` item
+//      carries `flaw_type` and no `key`. The loader enforces both.
+//   3. `rationale` is optional and is never shown to the model. Write it
+//      anyway -- for a flawed item it is the record of WHY it is flawed,
+//      and it is what makes the bank reusable by someone else.
+//   4. Distractors must be plausible. An obviously silly wrong option makes
+//      the item easy for a reason unrelated to the construct, which weakens
+//      every rate computed from it.
+//   5. Do not write a sound item whose flaw you did not intend. The whole
+//      study rests on the two populations actually being two populations.
+//
+// Four worked examples follow -- one sound, one per flaw type.
+
+{"item_id": "s-001", "population": "sound", "stem": "A function must return the number of distinct values in a list of integers. Which approach is correct and runs in linear time on average?", "options": {"A": "Sort the list, then count positions where the value differs from the previous one", "B": "Insert every value into a hash set and return its size", "C": "Compare every pair of values and count those that never match", "D": "Return the length of the list minus the number of repeated adjacent values"}, "key": "B", "rationale": "A hash set gives average linear time. A is correct but O(n log n). C is quadratic. D only catches adjacent duplicates."}
+
+{"item_id": "f-001", "population": "flawed", "flaw_type": "no_correct_option", "stem": "In a binary search over a sorted array of n elements, what is the worst-case number of comparisons?", "options": {"A": "n", "B": "n / 2", "C": "n squared", "D": "1"}, "rationale": "The answer is on the order of log n, which no option states. All four are wrong."}
+
+{"item_id": "f-002", "population": "flawed", "flaw_type": "multiple_correct_options", "stem": "Which of the following will raise an error when the key is absent from a Python dictionary?", "options": {"A": "d[key]", "B": "d.get(key)", "C": "d.pop(key)", "D": "d.setdefault(key)"}, "rationale": "Both A and C raise KeyError on an absent key. B returns None and D inserts. Two defensible answers."}
+
+{"item_id": "f-003", "population": "flawed", "flaw_type": "unanswerable_stem", "stem": "A process reads records from a queue and writes them to storage. How long will it take to finish?", "options": {"A": "Under one second", "B": "About one minute", "C": "About one hour", "D": "More than a day"}, "rationale": "No record count, no throughput, no latency figure. The stem omits everything needed to choose."}
