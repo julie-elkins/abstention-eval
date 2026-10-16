@@ -3,12 +3,19 @@
 **An evaluation that reports how often a model declined to answer is partly
 reporting its own prompt.**
 
-> ⚠️ **PRE-REGISTERED, NOT YET MEASURED.** The design, the arms and the
-> analysis below were written and committed *before* any model was called, so
-> the conclusion could not be chosen after seeing the data. Every number in
-> this file currently reads `TK`. **A `TK` is not a small number — it is the
-> absence of one.** If you are reading a `TK` in a published version of this
-> file, the run has not happened and nothing here is a result.
+> **PRE-REGISTERED, THEN MEASURED.** The design, the arms and the analysis plan
+> were written before any model was called, so the conclusion could not be
+> chosen after seeing the data.
+>
+> **What backs that ordering, precisely:** this repository was put under version
+> control *after* the first run, so no commit predates the data and git cannot
+> be the evidence. What exists is a file ordering — the design text and the arm
+> definitions were last written at 13:46 and 13:51 on 2026-10-16, the pilot ran
+> at 14:08 and the full study at 14:24 — plus the fact that the pre-run text is
+> committed here as its own first commit, separate from the commit that added
+> the results. Read the pre-registration claim as exactly that strong and no
+> stronger. A study about instruments overstating themselves should not overstate
+> its own provenance.
 
 ---
 
@@ -62,11 +69,14 @@ breakdown is recorded alongside it in the CSV.
 
 | Population | n | Declining is… |
 |---|---|---|
-| `sound` | TK | a **false** abstention — an answer the prompt cost us |
-| `flawed` | TK | **correct** — the prompt earned it |
+| `sound` | 40 | a **false** abstention — an answer the prompt cost us |
+| `flawed` | 20 | **correct** — the prompt earned it |
 
-A `flawed` item is defective in a stated way: no correct option, more than one
-defensibly correct option, or a stem that omits what is needed to choose.
+A `flawed` item is defective in a stated way, and the 20 are split across three
+named flaw types: `no_correct_option` (7), `multiple_correct_options` (7), and
+`unanswerable_stem` (6). **The flaw type is not a label, it is a third
+population** — see *The flawed population is not one population* below, which
+is the finding that changed how this study reports itself.
 
 Reporting only the `flawed` rate is how an abstention study flatters itself: a
 prompt that declines on everything scores perfectly on that population alone.
@@ -75,23 +85,88 @@ both at once.
 
 ## Results
 
-> `TK` — the run has not been executed. Fill from
-> `results/published/` and name the model, the date and the measured spend.
+Model: `claude-haiku-5-5` · date: 2026-10-16 · runs per arm: 3 · items: 60 ·
+calls: 720 (ceiling 800) · tokens: 166,968 in / 62,181 out · spend: **≈$0.05**
+(estimated from published list prices at $0.10/$0.50 per MTok, not read off a
+bill) · lost rows: 0/720 · backing data: `results/published/full.csv`
 
-Model: `TK` · date: `TK` · runs per arm: 3 · items: TK · calls: TK · spend: `TK`
+| Arm | `sound` declined | floor | `flawed` declined | floor | off-format (flawed) |
+|---|---|---|---|---|---|
+| `a0_no_affordance` | 0.0% – 0.0% | 0.0 | 0.0% – 0.0% | 0.0 | 5.0% – 15.0% |
+| `a1_bare_escape` | 0.0% – 0.0% | 0.0 | 30.0% – 40.0% | 10.0 | 0.0% – 0.0% |
+| `a2_reason_menu` | 0.0% – 0.0% | 0.0 | 55.0% – 60.0% | 5.0 | 15.0% – 25.0% |
+| `a3_category_menu` | 0.0% – 0.0% | 0.0 | 85.0% – 95.0% | 10.0 | 0.0% – 0.0% |
 
-| Arm | `sound` declined | floor | `flawed` declined | floor |
-|---|---|---|---|---|
-| `a0_no_affordance` | TK | TK | TK | TK |
-| `a1_bare_escape` | TK | TK | TK | TK |
-| `a2_reason_menu` | TK | TK | TK | TK |
-| `a3_category_menu` | TK | TK | TK | TK |
+**The headline.** Changing only how the option to decline is offered moved the
+measured decline rate on flawed items from 0% to 85–95%. The same model, the
+same items, the same instruction to answer. An abstention rate quoted without
+its prompt is not a property of the model.
+
+**The control did its job.** Across 40 sound items × 3 runs × 4 arms — 480
+observations — the decline rate was 0.0% in every single cell. No arm bought its
+flawed-item gain with false abstentions. That is what makes the headline a
+measurement finding rather than a demonstration that nagging a model makes it
+hedge.
+
+**Arm 0's zero is an undercount, and the off-format column is how you can tell.**
+With no sanctioned way to decline, arm 0 replied in neither format on 5–15% of
+flawed items — and *all* of that is concentrated in one flaw type (see below).
+It was declining; the instrument had nowhere to record it. Arm 2's 15–25%
+off-format means its 55–60% is an undercount too. Neither number is corrected
+here, because guessing at what an off-format reply meant is how a result becomes
+an opinion.
 
 **Rates are bands across three runs, never point estimates.** The `floor` is
 `max - min` across those runs: how much of the band is run-to-run movement
 rather than anything about the arm. **A floor wider than the gap between two
 arms means those two arms have not been shown to differ.** Read the floors
 before reading the gaps.
+
+## The flawed population is not one population
+
+The pooled `flawed` rate above is an average over three flaw types that do not
+behave alike. Split out, the single monotonic curve becomes three curves:
+
+| flaw type (n per run) | `a0` | `a1` bare escape | `a2` reason menu | `a3` category menu |
+|---|---|---|---|---|
+| `no_correct_option` (7) | 0.0% | **57.1% – 71.4%** | 57.1% – 71.4% | 100% |
+| `multiple_correct_options` (7) | 0.0% | **0.0% – 0.0%** | 42.9% – 57.1% | 71.4% – 85.7% |
+| `unanswerable_stem` (6) | 0.0% | 33.3% – 50.0% | 50.0% – 66.7% | 83.3% – 100% |
+
+**A bare escape hatch is blind to an entire flaw class.** Arm 1 declined
+57–71% of `no_correct_option` items and a flat **0.0%** of
+`multiple_correct_options` items — in the same runs, on the same model. Not a
+weaker effect: no effect at all.
+
+The mechanism is visible in the arm text rather than inferred. Arm 1's
+affordance is *"If you cannot answer, respond UNANSWERABLE"*. An item with two
+defensibly correct options **can** be answered — the model picks one and is
+scored correct. "Cannot answer" gives that defect no form to take. Arm 3 offers
+*"more than one correct"* as a lettered option, and the defect appears.
+
+So the sharper claim is not that scaffolding makes a model more willing to
+decline. It is that **an abstention instrument can only detect the flaw classes
+its response format has words for.** A study that offers a bare escape hatch and
+reports an abstention rate has silently scoped its own finding to the defects
+that hatch can express.
+
+**Two comparisons do not survive the split.** Per-class cells hold 6–7 items, so
+one item moving is 14–17 points — wider than several of the gaps being compared:
+
+- `a1` → `a2` on `no_correct_option` does **not** separate. Both are
+  57.1%–71.4%. The entire pooled `a1`→`a2` gain comes from the other two
+  classes, not from uniform improvement.
+- `a2` → `a3` on `multiple_correct_options` separates by about 14 points against
+  a 14-point floor. That one is marginal and nothing here leans on it.
+
+What clearly survives: `a0`→`a1` on two of three classes, arm 1's zero, and arm
+3 at or near ceiling on `no_correct_option`.
+
+**The reporting changed because of this.** `abstention-eval report` now always
+prints the per-class split beneath the pooled row, labels the pooled row
+`flawed (POOLED - see split)`, and computes blind spots rather than leaving them
+to a reader's eye. It is not behind a flag: a caveat that lives behind an option
+is a caveat somebody turns off.
 
 ## What this does not show
 
@@ -111,6 +186,16 @@ before reading the gaps.
 - **Three runs is a small number of runs.** The floor is an estimate of
   run-to-run movement from three draws, which is enough to show movement
   exists and not enough to characterise it.
+- **A perfect specificity result is weaker than 0.0% makes it look.** No arm
+  ever declined a sound item, which is the control working — but it shows no
+  false abstention on *clearly* sound items. The 40 were written to be
+  unambiguous, so none of them sits near the sound/flawed boundary. A bank with
+  genuinely borderline items is where an escape hatch would start costing
+  answers, and this study does not contain that bank.
+- **Per-class rates rest on 6–7 items.** The three-way split is the honest way
+  to report the flawed population and it is not a precise one. Treat the class
+  curves as showing which classes behave differently, not as estimates of how
+  much.
 
 ## Reproducing it
 

@@ -168,3 +168,102 @@ def test_off_format_is_reported_per_arm_not_only_globally(tmp_path):
     rendered = render(summary)
     assert "off-format" in rendered
     assert "did not record" in rendered
+
+
+# --- flaw-type split, added 2026-10-16 -------------------------------------------
+#
+# The pooled `flawed` rate averages classes that behave differently. These
+# tests pin the split itself and, more importantly, pin the blind-spot
+# detector BOTH ways: it must fire on an arm that declines some classes and
+# not another, and it must stay silent on the control arm that declines
+# nothing at all. A detector only ever tested on the positive case passes
+# just as happily when it fires on everything.
+
+
+def _flawed(arm, run_index, flaw_type, outcome, item_id):
+    return _row(arm_id=arm, population="flawed", run_index=run_index,
+                flaw_type=flaw_type, outcome=outcome, provider="p", model="m",
+                prompt_sha256="h-" + arm, item_id=item_id)
+
+
+def test_flaw_types_are_split_out_and_do_not_disturb_the_pooled_rate(tmp_path):
+    # One run, 4 flawed items: both no_correct_option declined, neither
+    # multiple_correct_options declined. Pooled = 50%, split = 100% / 0%.
+    rows = [
+        _flawed("a", "1", "no_correct_option", "abstained", "f1"),
+        _flawed("a", "1", "no_correct_option", "abstained", "f2"),
+        _flawed("a", "1", "multiple_correct_options", "answered", "f3"),
+        _flawed("a", "1", "multiple_correct_options", "answered", "f4"),
+    ]
+    arm = summarise(_write(tmp_path, rows))["arms"][0]
+    assert arm["populations"]["flawed"]["low"] == 50.0
+    assert arm["flaw_types"]["no_correct_option"]["low"] == 100.0
+    assert arm["flaw_types"]["multiple_correct_options"]["high"] == 0.0
+    assert arm["flaw_types"]["no_correct_option"]["items_per_run"] == 2
+
+
+def test_sound_rows_never_enter_the_flaw_type_split(tmp_path):
+    rows = [
+        _row(arm_id="a", population="sound", run_index="1", outcome="answered",
+             provider="p", model="m", prompt_sha256="h", item_id="s1"),
+        _flawed("a", "1", "unanswerable_stem", "abstained", "f1"),
+    ]
+    arm = summarise(_write(tmp_path, rows))["arms"][0]
+    assert set(arm["flaw_types"]) == {"unanswerable_stem"}
+
+
+def test_blind_spot_fires_when_one_class_is_never_declined(tmp_path):
+    rows = [
+        _flawed("a1", "1", "no_correct_option", "abstained", "f1"),
+        _flawed("a1", "1", "multiple_correct_options", "answered", "f2"),
+    ]
+    summary = summarise(_write(tmp_path, rows))
+    assert [s["flaw_type"] for s in summary["blind_spots"]] == [
+        "multiple_correct_options"
+    ]
+    assert "BLIND SPOT" in render(summary)
+
+
+def test_the_no_affordance_control_arm_is_not_a_blind_spot(tmp_path):
+    # Declines nothing anywhere. That is the control arm working, not a
+    # format that cannot express a defect, so it must NOT be flagged.
+    rows = [
+        _flawed("a0", "1", "no_correct_option", "answered", "f1"),
+        _flawed("a0", "1", "multiple_correct_options", "answered", "f2"),
+    ]
+    summary = summarise(_write(tmp_path, rows))
+    assert summary["blind_spots"] == []
+    assert "BLIND SPOT" not in render(summary)
+
+
+def test_pooled_flawed_row_is_never_rendered_without_its_caveat(tmp_path):
+    rows = [
+        _flawed("a", "1", "no_correct_option", "abstained", "f1"),
+        _flawed("a", "1", "multiple_correct_options", "answered", "f2"),
+    ]
+    rendered = render(summarise(_write(tmp_path, rows)))
+    assert "flawed (POOLED - see split)" in rendered
+    assert "- no_correct_option [n=1]" in rendered
+    # The bare label must not appear as a standalone column value.
+    assert "flawed  " not in rendered
+
+
+def test_the_scorer_version_is_surfaced(tmp_path):
+    """A prompt hash says what the model saw, not how it was scored."""
+    rows = [
+        _row(arm_id="a", population="sound", run_index="1", outcome="answered",
+             provider="anthropic", model="m", prompt_sha256="H1", item_id="i1",
+             scorer_version="v2-2026-10-16"),
+    ]
+    summary = summarise(_write(tmp_path, rows))
+    assert summary["scorers"] == ["v2-2026-10-16"]
+    assert "v2-2026-10-16" in render(summary)
+
+
+def test_a_csv_with_no_scorer_column_is_marked_unrecorded(tmp_path):
+    rows = [
+        _row(arm_id="a", population="sound", run_index="1", outcome="answered",
+             provider="anthropic", model="m", prompt_sha256="H1", item_id="i1"),
+    ]
+    summary = summarise(_write(tmp_path, rows))
+    assert summary["scorers"] == ["unrecorded"]
