@@ -59,6 +59,20 @@ class Arm:
     #: Options offered inside the affordance, if any. Hashed sorted so that
     #: reordering the menu does not read as a different instrument.
     menu: tuple[str, ...] = field(default_factory=tuple)
+    #: Tokens that mean "I decline" in THIS arm's own sanctioned vocabulary,
+    #: beyond the shared abstain token.
+    #:
+    #: Measured 2026-10-16 on the full run: arm 2 replied with a bare reason
+    #: from its own menu -- `NO_CORRECT_OPTION`, 11 times -- without the
+    #: UNANSWERABLE prefix the classifier keyed on. Those are abstentions in
+    #: the vocabulary the arm itself handed the model, and scoring them as
+    #: unreadable undercounted arm 2 and ONLY arm 2, because only arm 2 has a
+    #: reason menu. That is a per-arm bias, which is fatal to the comparison.
+    #:
+    #: This is declared per arm rather than inferred from `menu`, because arm
+    #: 3's menu holds substantive answer options rather than reasons for
+    #: declining, and conflating the two would be the same error inverted.
+    abstain_vocabulary: tuple[str, ...] = field(default_factory=tuple)
 
     @property
     def prompt_sha256(self) -> str:
@@ -121,6 +135,7 @@ ARMS: tuple[Arm, ...] = (
             + "\n"
         ),
         menu=_REASON_MENU,
+        abstain_vocabulary=_REASON_MENU,
     ),
     Arm(
         arm_id="a3_category_menu",

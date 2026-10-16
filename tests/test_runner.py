@@ -188,3 +188,27 @@ def test_stop_reason_is_recorded_on_every_row(tmp_path):
     with out.open(encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
     assert all(r["stop_reason"] for r in rows), "a row with no stop_reason is undiagnosable"
+
+
+def test_a_bare_reason_from_the_arms_own_menu_is_an_abstention():
+    """Measured on the full run: arm 2 replied `NO_CORRECT_OPTION` 11 times
+    with no UNANSWERABLE prefix. Scoring that unreadable undercounted arm 2
+    and only arm 2, because only arm 2 has a reason menu."""
+    vocab = ("NO_CORRECT_OPTION", "AMBIGUOUS_STEM")
+    assert classify("NO_CORRECT_OPTION", "end_turn", vocab).outcome == "abstained"
+    assert classify("ambiguous_stem", "end_turn", vocab).outcome == "abstained"
+
+
+def test_an_improvised_refusal_is_not_in_any_vocabulary_so_stays_off_format():
+    """Arm 0 replied 'declining' / 'NONE' / 'DECLINE'. Accepting those would
+    give arm 0 a looser classification rule than every other arm."""
+    for text in ("declining", "NONE", "DECLINE"):
+        assert classify(text, "end_turn", ()).outcome == "off_format"
+        assert classify(text, "end_turn", ("NO_CORRECT_OPTION",)).outcome == "off_format"
+
+
+def test_arm_three_options_are_not_treated_as_an_abstain_vocabulary():
+    from abstention_eval.arms import ARMS_BY_ID
+
+    assert ARMS_BY_ID["a3_category_menu"].abstain_vocabulary == ()
+    assert ARMS_BY_ID["a2_reason_menu"].abstain_vocabulary != ()

@@ -40,6 +40,7 @@ FIELDNAMES = (
     "correct",
     "raw_text",
     "stop_reason",
+    "scorer_version",
     "input_tokens",
     "output_tokens",
     "recorded_at",
@@ -47,6 +48,16 @@ FIELDNAMES = (
 
 #: A bare letter on its own, optionally followed by punctuation.
 _LETTER = re.compile(r"\b([A-G])\b")
+
+#: Bumped whenever classification SEMANTICS change, and recorded on every
+#: row. The prompt hash covers what the model was shown; it says nothing
+#: about how the reply was scored, so two runs can share a prompt hash and
+#: disagree because the scorer moved underneath them.
+#:
+#: v2, 2026-10-16: a bare token from an arm's own abstain vocabulary counts
+#: as an abstention. v1 scored those `off_format`, which undercounted arm 2
+#: and only arm 2.
+SCORER_VERSION = "v2-2026-10-16"
 
 OUTCOMES = (
     "answered",
@@ -64,7 +75,11 @@ class Classified:
     answer_letter: str | None
 
 
-def classify(text: str, stop_reason: str = "") -> Classified:
+def classify(
+    text: str,
+    stop_reason: str = "",
+    abstain_vocabulary: tuple[str, ...] = (),
+) -> Classified:
     """`truncated` is kept separate from `unparseable` on purpose: both are
     lost observations, but one is fixed by raising the token ceiling and the
     other by constraining the output format. An empty reply looks identical
@@ -76,6 +91,10 @@ def classify(text: str, stop_reason: str = "") -> Classified:
         return Classified("unparseable", None)
     upper = text.upper()
     if ABSTAIN_TOKEN in upper:
+        return Classified("abstained", None)
+    # A bare token from the arm's own declared vocabulary. Mechanical, not
+    # interpretive: the arm handed the model this exact word list.
+    if upper.strip() in {v.upper() for v in abstain_vocabulary}:
         return Classified("abstained", None)
     match = _LETTER.search(upper)
     if match is None:
@@ -148,7 +167,11 @@ def run(
                         completion = provider.complete(
                             arm, prompt, item.item_id, item.population
                         )
-                        verdict = classify(completion.text, completion.stop_reason)
+                        verdict = classify(
+                            completion.text,
+                            completion.stop_reason,
+                            arm.abstain_vocabulary,
+                        )
                         tally[verdict.outcome] += 1
                         input_tokens += completion.input_tokens
                         output_tokens += completion.output_tokens
@@ -175,6 +198,7 @@ def run(
                                 ),
                                 "raw_text": completion.text,
                                 "stop_reason": completion.stop_reason,
+                                "scorer_version": SCORER_VERSION,
                                 "input_tokens": completion.input_tokens,
                                 "output_tokens": completion.output_tokens,
                                 "recorded_at": datetime.now(timezone.utc).isoformat(),

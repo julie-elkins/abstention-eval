@@ -86,19 +86,20 @@ both at once.
 ## Results
 
 Model: `claude-haiku-5-5` · date: 2026-10-16 · runs per arm: 3 · items: 60 ·
-calls: 720 (ceiling 800) · tokens: 166,968 in / 62,181 out · spend: **≈$0.05**
+calls: 720 (ceiling 800) · tokens: 166,968 in / 63,737 out · spend: **≈$0.05**
 (estimated from published list prices at $0.10/$0.50 per MTok, not read off a
-bill) · lost rows: 0/720 · backing data: `results/published/full.csv`
+bill) · lost rows: 0/720 · scorer: `v2-2026-10-16` · backing data:
+`results/published/full.csv`
 
 | Arm | `sound` declined | floor | `flawed` declined | floor | off-format (flawed) |
 |---|---|---|---|---|---|
 | `a0_no_affordance` | 0.0% – 0.0% | 0.0 | 0.0% – 0.0% | 0.0 | 5.0% – 15.0% |
-| `a1_bare_escape` | 0.0% – 0.0% | 0.0 | 30.0% – 40.0% | 10.0 | 0.0% – 0.0% |
-| `a2_reason_menu` | 0.0% – 0.0% | 0.0 | 55.0% – 60.0% | 5.0 | 15.0% – 25.0% |
-| `a3_category_menu` | 0.0% – 0.0% | 0.0 | 85.0% – 95.0% | 10.0 | 0.0% – 0.0% |
+| `a1_bare_escape` | 0.0% – 0.0% | 0.0 | 30.0% – 45.0% | 15.0 | 0.0% – 0.0% |
+| `a2_reason_menu` | 0.0% – 0.0% | 0.0 | 70.0% – 75.0% | 5.0 | 0.0% – 0.0% |
+| `a3_category_menu` | 0.0% – 0.0% | 0.0 | 90.0% – 95.0% | 5.0 | 0.0% – 0.0% |
 
 **The headline.** Changing only how the option to decline is offered moved the
-measured decline rate on flawed items from 0% to 85–95%. The same model, the
+measured decline rate on flawed items from 0% to 90–95%. The same model, the
 same items, the same instruction to answer. An abstention rate quoted without
 its prompt is not a property of the model.
 
@@ -111,10 +112,22 @@ hedge.
 **Arm 0's zero is an undercount, and the off-format column is how you can tell.**
 With no sanctioned way to decline, arm 0 replied in neither format on 5–15% of
 flawed items — and *all* of that is concentrated in one flaw type (see below).
-It was declining; the instrument had nowhere to record it. Arm 2's 15–25%
-off-format means its 55–60% is an undercount too. Neither number is corrected
-here, because guessing at what an off-format reply meant is how a result becomes
-an opinion.
+It was declining; the instrument had nowhere to record it — the replies were
+`declining`, `NONE`, `DECLINE`. Those stay off-format: they belong to no
+declared vocabulary, and accepting them would give arm 0 a looser
+classification rule than every other arm.
+
+**Arm 2 had the same symptom and a different cause, and that distinction is
+why the scorer has a version.** A first run scored arm 2 at 55–60% with 15–25%
+off-format. Reading those replies showed `NO_CORRECT_OPTION` (11 of 12) and
+`MULTIPLE_CORRECT_OPTIONS` (1 of 12) — arm 2's own menu words, emitted without
+the `UNANSWERABLE` prefix the classifier keyed on. Matching an arm's own
+declared vocabulary is mechanical rather than interpretive, so scorer `v2`
+counts them as abstentions and arm 2's off-format rate is now 0.0%. **The
+defect was specific to arm 2, because only arm 2 has a reason menu — a bias in
+one arm, which is fatal to a between-arm comparison and invisible in the
+pooled output.** The numbers above are the re-run under `v2`; `scorer_version`
+is recorded on every row so this ambiguity cannot recur silently.
 
 **Rates are bands across three runs, never point estimates.** The `floor` is
 `max - min` across those runs: how much of the band is run-to-run movement
@@ -129,12 +142,12 @@ behave alike. Split out, the single monotonic curve becomes three curves:
 
 | flaw type (n per run) | `a0` | `a1` bare escape | `a2` reason menu | `a3` category menu |
 |---|---|---|---|---|
-| `no_correct_option` (7) | 0.0% | **57.1% – 71.4%** | 57.1% – 71.4% | 100% |
-| `multiple_correct_options` (7) | 0.0% | **0.0% – 0.0%** | 42.9% – 57.1% | 71.4% – 85.7% |
-| `unanswerable_stem` (6) | 0.0% | 33.3% – 50.0% | 50.0% – 66.7% | 83.3% – 100% |
+| `no_correct_option` (7) | 0.0% | **57.1% – 85.7%** | 85.7% – 100% | 100% |
+| `multiple_correct_options` (7) | 0.0% | **0.0% – 0.0%** | 57.1% – 57.1% | 85.7% – 85.7% |
+| `unanswerable_stem` (6) | 0.0% | 33.3% – 50.0% | 50.0% – 83.3% | 83.3% – 100% |
 
 **A bare escape hatch is blind to an entire flaw class.** Arm 1 declined
-57–71% of `no_correct_option` items and a flat **0.0%** of
+57–86% of `no_correct_option` items and a flat **0.0%** of
 `multiple_correct_options` items — in the same runs, on the same model. Not a
 weaker effect: no effect at all.
 
@@ -153,14 +166,18 @@ that hatch can express.
 **Two comparisons do not survive the split.** Per-class cells hold 6–7 items, so
 one item moving is 14–17 points — wider than several of the gaps being compared:
 
-- `a1` → `a2` on `no_correct_option` does **not** separate. Both are
-  57.1%–71.4%. The entire pooled `a1`→`a2` gain comes from the other two
-  classes, not from uniform improvement.
-- `a2` → `a3` on `multiple_correct_options` separates by about 14 points against
-  a 14-point floor. That one is marginal and nothing here leans on it.
+- `a1` → `a2` on `no_correct_option` does **not** separate. The bands touch at
+  85.7% and arm 1's floor is 28.6 points — wider than the whole apparent gain.
+  So the pooled `a1`→`a2` improvement does not come from uniform improvement
+  across classes.
+- `a2` → `a3` on `unanswerable_stem` does **not** separate either: 50.0–83.3%
+  against 83.3–100%, bands touching, floors of 33.3 and 16.7.
 
-What clearly survives: `a0`→`a1` on two of three classes, arm 1's zero, and arm
-3 at or near ceiling on `no_correct_option`.
+What survives: `a0`→`a1` on two of three classes; arm 1's flat zero on
+`multiple_correct_options`; `a2`→`a3` on `multiple_correct_options`, which is
+the one per-class comparison that separates cleanly (57.1% vs 85.7%, both with
+a zero floor across all three runs); and arm 3 at ceiling on
+`no_correct_option`.
 
 **The reporting changed because of this.** `abstention-eval report` now always
 prints the per-class split beneath the pooled row, labels the pooled row
