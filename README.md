@@ -37,6 +37,48 @@ the thing it names. If the answer is "a lot", then an abstention rate quoted
 without its prompt is not interpretable, and two papers reporting different
 refusal rates for the same model may be reporting their own wording.
 
+The design reasoning is recorded in
+[DESIGN_DECISIONS.md](DESIGN_DECISIONS.md). It connects the controlled prompt change
+to the alternative rejected, the test that protects the comparison, and the limit on
+what the result can establish.
+
+## Submission information
+
+**Domain and expertise.** This is an evaluation-methods study in technical assessment
+and language-model quality measurement. My professional work is in cloud
+architecture, technical training, and assessment content. That matters here because
+the study treats a question as an instrument: an instrument is the procedure that
+turns a model response into a reported score, so the response format is part of what
+must be evaluated.
+
+**Video walkthrough.** Replace the placeholder below with an accessible link before
+uploading. The same link must appear in the HackerRank video field and remain viewable
+without requesting access.
+
+`VIDEO_LINK_TO_REPLACE_BEFORE_UPLOAD`
+
+The walkthrough should cover the question, the four arms, the scoring rule, the
+published results, the blind spot, and the limitations. It should be five minutes or
+less; no slides or camera view are required.
+
+**Prior work and sources.** This repository existed before the hackathon submission.
+The submission is an extension and disclosure of prior work, not a claim that the
+repository was created during the event. The related
+[nl2sql-eval](https://github.com/julie-elkins/nl2sql-eval) repository measured a
+different failure pair—unsupported answers and unnecessary refusals—and motivated
+this narrower study of whether the evaluation instrument itself changes the observed
+abstention rate. The method, item bank, scorer, and results in this repository are
+the work being submitted here. No certification-exam, employer, client, or
+proprietary question material is included.
+
+**Reproducibility and cost.** Tests, dry runs, the deterministic stub, and reporting
+against the published CSV require no API key and no spend. Repeating the measured
+Anthropic run requires an `ANTHROPIC_API_KEY`, an explicitly named model, and a
+per-run call ceiling. The published run used `claude-haiku-5-5` on 2026-10-16, with
+three runs per arm and an estimated cost of approximately $0.05. The estimate is
+included so a reviewer can understand the scale; it is not a promise that a future
+run will cost the same amount.
+
 ## The design
 
 Four arms. Each adds exactly one thing to the one before it. **Nothing else
@@ -257,6 +299,22 @@ the thing that produced it.
 A run that exceeds `--max-calls` is refused before it spends anything, and a
 run that dies partway deletes its own output rather than leaving a short CSV
 that `report` would read as a complete run.
+
+## Building the HackerRank ZIP
+
+The repository includes `scripts/package_submission.sh`, which creates a clean ZIP
+with `README.md` at its root. It excludes the Git history, virtual environment,
+test caches, regenerated measurement files, and local credentials. The script refuses
+to package an actual `.env` file and fails if the archive exceeds HackerRank's 50 MB
+limit.
+
+```
+./scripts/package_submission.sh
+```
+
+The output is written to `dist/abstention-eval-submission.zip`. Review the archive
+contents before uploading and replace the video placeholder above with the final
+accessible link.
 
 ## The item bank
 
