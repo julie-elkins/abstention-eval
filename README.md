@@ -55,7 +55,7 @@ must be evaluated.
 uploading. The same link must appear in the HackerRank video field and remain viewable
 without requesting access.
 
-`VIDEO_LINK_TO_REPLACE_BEFORE_UPLOAD`
+https://youtu.be/rbw_PRK8TVY
 
 The walkthrough should cover the question, the four arms, the scoring rule, the
 published results, the blind spot, and the limitations. It should be five minutes or
