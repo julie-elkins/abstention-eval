@@ -74,20 +74,39 @@ blind-spot warning.]**
 
 “On sound items, every arm declined zero percent. That is the control: the added
 decline options did not create false abstentions on the clearly answerable items in
-this bank.
+this bank. A false abstention would mean the model refused an item that had a valid
+answer.
 
-On flawed items, the measured decline rate moved from zero percent with no affordance,
-to 30–45 percent with a bare escape word, 70–75 percent with a reason menu, and
-90–95 percent with the category menu.
+Now look at the flawed items, where declining is the desired behavior. The recorded
+decline rate moved from zero percent with no decline affordance, to 30–45 percent
+with a bare escape word, 70–75 percent with a reason menu, and 90–95 percent with
+the category menu. An affordance is simply an explicit response the prompt allows
+the model to give.
+
+There is an important qualification in the first zero. In the no-affordance arm,
+5–15 percent of flawed responses were off-format: the model produced something that
+was not one of A through D and was not one of that arm's declared decline responses.
+The scorer keeps those separate instead of silently counting them as abstentions.
+So the result is not “the model answered every flawed item.” It is “the instrument
+recorded no sanctioned declines when the prompt supplied no way to express one.”
 
 The most important result is the split by flaw type. The bare escape arm declined
 57–86 percent of items with no correct option, but zero percent of items with
-multiple correct options. The category menu, which gave that second defect an
-explicit response, declined 86 percent of those items.
+multiple correct options. An item with no correct option cannot be answered
+correctly, so the word `UNANSWERABLE` gives that problem a usable output. An item
+with multiple correct options can still be answered by choosing one option, so the
+word `UNANSWERABLE` does not name that defect.
+
+The category menu adds an explicit response for “more than one correct.” Once that
+response exists, the same model declined 86 percent of those items. That change is
+why the per-flaw split matters: the pooled flawed rate hides that one defect is
+invisible to the bare escape arm.
 
 That is not evidence that the model could not recognize multiple correct options.
-It is evidence that the response format gave that defect no sanctioned way to appear.
-The instrument can only detect flaw classes that its vocabulary can express.”
+The experiment cannot distinguish “the model did not notice the defect” from “the
+model noticed it but had no permitted output for it.” It does show that the response
+format gave that defect no sanctioned way to appear. The instrument can only detect
+flaw classes that its vocabulary can express.”
 
 ## 3:05–3:35 — Prior work and limits
 
